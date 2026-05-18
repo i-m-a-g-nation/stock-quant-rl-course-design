@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+
+data/raw/
+data/processed/
+data/features/
+
+outputs/figures/
+outputs/tables/
+outputs/models/
+
+*.pkl
+*.joblib
+*.log
+
+# Local-only working notes / generated review artifacts
+PROJECT_MEMORY.md
+stage*.diff
+stage*_check.md
+temp/
+
+# Reports and rendered artifacts are kept outside the public code repo
+report/
+*.doc
+*.docx
+*.pdf
