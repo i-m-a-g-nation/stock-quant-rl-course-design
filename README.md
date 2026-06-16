@@ -140,3 +140,56 @@ python run_stage6.py
 | `outputs/figures/SPY_rl_qlearning_equity.png` | 三策略权益曲线对比 |
 
 > 阶段 6 依赖阶段 2 的特征数据。Q-learning 为课程级 tabular 离散状态简化实现，效果弱于 Buy & Hold，主要用于展示 RL 交易环境和智能体训练流程。未使用 PPO/DQN/A2C/stable_baselines3 等深度 RL 方法。
+
+---
+
+## Enhanced Experiments（增强实验）
+
+在原有阶段 1-6 基础上，新增以下增强实验内容。
+
+### 运行方式
+
+按原有顺序运行即可，增强功能已集成到各阶段中：
+
+```bash
+python run_stage1.py  # 数据获取与清洗（无变化）
+python run_stage2.py  # 特征工程（新增相对化特征）
+python run_stage3.py  # 机器学习（新增 DummyClassifier + 增强指标）
+python run_stage4.py  # 回测（新增多策略对比）
+python run_stage5.py  # LSTM（无变化）
+python run_stage6.py  # Q-learning（新增训练集/测试集分离）
+python scripts/collect_experiment_summary.py  # 生成实验总摘要
+```
+
+### 增强内容概览
+
+| 阶段 | 增强内容 |
+|------|----------|
+| 阶段 2 | 新增 8 个相对化特征，定义 FEATURE_COLS_ORIGINAL / RELATIVE / ALL |
+| 阶段 3 | 新增 DummyClassifier 基线、balanced_accuracy/roc_auc/混淆矩阵、permutation importance |
+| 阶段 4 | 新增 6 策略回测对比（BuyAndHold/AlwaysLong/LR/RF/DummyMostFrequent/DummyStratified） |
+| 阶段 6 | Q-learning 训练集(80%)/测试集(20%)分离，测试集 epsilon=0 贪心评估 |
+
+### 新增输出文件
+
+| 文件 | 说明 |
+|------|------|
+| `outputs/tables/SPY_ml_model_metrics_enhanced.csv` | 增强 ML 指标表 |
+| `outputs/tables/SPY_ml_test_predictions_enhanced.csv` | 增强测试预测 |
+| `outputs/tables/SPY_ml_confusion_matrices.csv` | 混淆矩阵 |
+| `outputs/tables/SPY_feature_columns_enhanced.csv` | 特征字段说明 |
+| `outputs/tables/SPY_strategy_backtest_enhanced_metrics.csv` | 多策略回测指标 |
+| `outputs/tables/SPY_strategy_equity_curves_enhanced.csv` | 多策略权益曲线 |
+| `outputs/tables/SPY_permutation_importance.csv` | Permutation importance |
+| `outputs/tables/SPY_rl_train_test_summary.csv` | RL 训练/测试摘要 |
+| `outputs/tables/SPY_rl_test_strategy_metrics.csv` | RL 测试集策略指标 |
+| `outputs/tables/SPY_rl_test_equity_curves.csv` | RL 测试集权益曲线 |
+| `outputs/figures/SPY_ml_metrics_enhanced.png` | ML 指标对比图 |
+| `outputs/figures/SPY_permutation_importance_top15.png` | Perm Imp 图 |
+| `outputs/figures/SPY_strategy_equity_curves_enhanced.png` | 多策略权益图 |
+| `outputs/figures/SPY_strategy_drawdowns_enhanced.png` | 多策略回撤图 |
+| `outputs/figures/SPY_rl_test_equity_curves.png` | RL 测试集权益图 |
+| `outputs/figures/SPY_rl_test_drawdowns.png` | RL 测试集回撤图 |
+| `outputs/EXPERIMENT_SUMMARY.md` | 实验总摘要 |
+
+> 免责声明：本项目仍为课程实验，不构成投资建议。

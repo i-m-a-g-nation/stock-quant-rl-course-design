@@ -1,5 +1,5 @@
 """
-特征工程模块：基于清洗数据构建基础技术特征
+特征工程模块：基于清洗数据构建基础技术特征 + 相对化特征
 """
 import pandas as pd
 import numpy as np
@@ -13,19 +13,43 @@ logger = setup_logging("feature_eng")
 INPUT_FILE = "SPY_clean_2015_2025.csv"
 OUTPUT_FILE = "SPY_features_2015_2025.csv"
 SUMMARY_FILE = "SPY_feature_summary.csv"
+FEATURE_COLUMNS_FILE = "SPY_feature_columns_enhanced.csv"
 
 # 保留的原始字段
 RAW_COLUMNS = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
+
+# 特征列集合定义
+FEATURE_COLS_ORIGINAL = [
+    "Open", "High", "Low", "Close", "Adj Close", "Volume",
+    "return_1d", "return_5d", "ma_5", "ma_10", "ma_20", "ma_60",
+    "volatility_20", "volume_ma_20", "close_ma20_ratio",
+]
+
+FEATURE_COLS_RELATIVE = [
+    "open_close_ratio", "high_low_ratio",
+    "close_ma5_ratio", "close_ma10_ratio", "close_ma20_ratio_v2", "close_ma60_ratio",
+    "volume_ratio_20", "volatility_change_5",
+    "return_1d", "return_5d", "volatility_20",
+]
+
+FEATURE_COLS_ALL = [
+    "Open", "High", "Low", "Close", "Adj Close", "Volume",
+    "return_1d", "return_5d", "ma_5", "ma_10", "ma_20", "ma_60",
+    "volatility_20", "volume_ma_20", "close_ma20_ratio",
+    "open_close_ratio", "high_low_ratio",
+    "close_ma5_ratio", "close_ma10_ratio", "close_ma20_ratio_v2", "close_ma60_ratio",
+    "volume_ratio_20", "volatility_change_5",
+]
 
 
 @timer
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    基于清洗数据构建基础特征。
+    基于清洗数据构建基础特征 + 相对化特征。
     参数:
         df: 清洗后 DataFrame（日期索引，含 OHLCV 列）
     返回:
-        特征 DataFrame（含原始列 + 技术特征列）
+        特征 DataFrame（含原始列 + 技术特征列 + 相对化特征列）
     """
     logger.info("=" * 50)
     logger.info("开始特征工程")
@@ -62,6 +86,17 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     # ---- 价格相对位置 ----
     feat["close_ma20_ratio"] = close / feat["ma_20"]
     logger.info("  + close_ma20_ratio")
+
+    # ---- 相对化特征（新增） ----
+    feat["open_close_ratio"] = feat["Open"] / feat["Close"] - 1
+    feat["high_low_ratio"] = feat["High"] / feat["Low"] - 1
+    feat["close_ma5_ratio"] = close / feat["ma_5"] - 1
+    feat["close_ma10_ratio"] = close / feat["ma_10"] - 1
+    feat["close_ma20_ratio_v2"] = close / feat["ma_20"] - 1
+    feat["close_ma60_ratio"] = close / feat["ma_60"] - 1
+    feat["volume_ratio_20"] = volume / feat["volume_ma_20"] - 1
+    feat["volatility_change_5"] = feat["volatility_20"] / feat["volatility_20"].shift(5) - 1
+    logger.info("  + 相对化特征 (8 个)")
 
     # ---- 清洗 NaN（rolling / pct_change 产生） ----
     n_before = len(feat)
@@ -145,24 +180,81 @@ def save_feature_summary(report: pd.DataFrame, filename: str = SUMMARY_FILE) -> 
 
 
 @timer
+def save_feature_columns_description(filename: str = FEATURE_COLUMNS_FILE) -> Path:
+    """保存特征字段说明到 outputs/tables/"""
+    rows = []
+    for col in FEATURE_COLS_ORIGINAL:
+        rows.append({"特征列": col, "集合": "ORIGINAL", "说明": _get_feature_description(col)})
+    for col in FEATURE_COLS_RELATIVE:
+        if col not in FEATURE_COLS_ORIGINAL:
+            rows.append({"特征列": col, "集合": "RELATIVE", "说明": _get_feature_description(col)})
+        else:
+            rows.append({"特征列": col, "集合": "BOTH", "说明": _get_feature_description(col)})
+    for col in FEATURE_COLS_ALL:
+        if col not in [r["特征列"] for r in rows]:
+            rows.append({"特征列": col, "集合": "ALL", "说明": _get_feature_description(col)})
+
+    df = pd.DataFrame(rows)
+    OUTPUT_TABLES.mkdir(parents=True, exist_ok=True)
+    filepath = OUTPUT_TABLES / filename
+    df.to_csv(filepath, index=False, encoding="utf-8-sig")
+    logger.info("特征字段说明已保存: %s (%d 行)", filepath, len(df))
+    return filepath
+
+
+def _get_feature_description(col: str) -> str:
+    """获取特征列的中文说明"""
+    descriptions = {
+        "Open": "开盘价",
+        "High": "最高价",
+        "Low": "最低价",
+        "Close": "收盘价",
+        "Adj Close": "调整后收盘价",
+        "Volume": "成交量",
+        "return_1d": "1日收益率 (%)",
+        "return_5d": "5日收益率 (%)",
+        "ma_5": "5日移动均线",
+        "ma_10": "10日移动均线",
+        "ma_20": "20日移动均线",
+        "ma_60": "60日移动均线",
+        "volatility_20": "20日波动率",
+        "volume_ma_20": "20日成交量均线",
+        "close_ma20_ratio": "收盘价/20日均线",
+        "open_close_ratio": "开盘/收盘价比 - 1",
+        "high_low_ratio": "最高/最低价比 - 1",
+        "close_ma5_ratio": "收盘价/5日均线 - 1",
+        "close_ma10_ratio": "收盘价/10日均线 - 1",
+        "close_ma20_ratio_v2": "收盘价/20日均线 - 1",
+        "close_ma60_ratio": "收盘价/60日均线 - 1",
+        "volume_ratio_20": "成交量/20日均量 - 1",
+        "volatility_change_5": "波动率5日变化率",
+    }
+    return descriptions.get(col, "")
+
+
+@timer
 def run_pipeline():
     """一键运行特征工程全流程"""
     # 1. 加载清洗数据
-    logger.info("[Step 1/3] 加载清洗数据")
+    logger.info("[Step 1/4] 加载清洗数据")
     clean_path = DATA_PROCESSED / INPUT_FILE
     if not clean_path.exists():
         raise FileNotFoundError(f"清洗数据不存在: {clean_path}\n请先运行 python run_stage1.py")
     df_clean = pd.read_csv(clean_path, index_col=0, parse_dates=True)
 
     # 2. 构建特征
-    logger.info("[Step 2/3] 构建特征")
+    logger.info("[Step 2/4] 构建特征")
     df_feat = build_features(df_clean)
     save_features(df_feat)
 
     # 3. 生成摘要
-    logger.info("[Step 3/3] 生成特征摘要")
+    logger.info("[Step 3/4] 生成特征摘要")
     summary = generate_feature_summary(df_feat)
     save_feature_summary(summary)
+
+    # 4. 保存特征字段说明
+    logger.info("[Step 4/4] 保存特征字段说明")
+    save_feature_columns_description()
 
     # 打印关键信息
     logger.info("--- 特征摘要 ---")

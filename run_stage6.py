@@ -8,6 +8,8 @@
   3. 运行买入持有 baseline
   4. 计算并对比评估指标
   5. 保存结果与权益曲线图
+  6. Q-learning 训练 + 评估（原有全样本）
+  7. 增强 Q-learning：训练集训练、测试集评估（新增）
 
 用法:  python run_stage6.py
 =============================================================================
@@ -33,14 +35,14 @@ from src.trading_env import (
     StockTradingEnv, run_random_baseline, run_buy_and_hold, compute_metrics,
     INPUT_FILE,
 )
-from src.rl_agent import train_qlearning, evaluate_qlearning
+from src.rl_agent import train_qlearning, evaluate_qlearning, run_enhanced_qlearning
 
 logger = setup_logging("stage6")
 
 
 def run_stage6():
     logger.info("=" * 60)
-    logger.info("  阶段6: 交易环境 + 基线策略")
+    logger.info("  阶段6: 交易环境 + 基线策略 + Q-learning")
     logger.info("=" * 60)
 
     try:
@@ -51,7 +53,7 @@ def run_stage6():
         logger.info("gymnasium 未安装（使用纯 Python 环境）")
 
     # 1. 加载数据
-    logger.info("\n>>> [Step 1/4] 加载数据 + 创建环境")
+    logger.info("\n>>> [Step 1/8] 加载数据 + 创建环境")
     feat_path = DATA_FEATURES / INPUT_FILE
     if not feat_path.exists():
         raise FileNotFoundError(f"{feat_path}\n请先运行 python run_stage2.py")
@@ -62,16 +64,16 @@ def run_stage6():
                 env.n)
 
     # 2-3. 运行基线
-    logger.info("\n>>> [Step 2/4] 随机策略 baseline")
+    logger.info("\n>>> [Step 2/8] 随机策略 baseline")
     hist_random = run_random_baseline(env, seed=42)
     m_random = compute_metrics(hist_random, "Random")
 
-    logger.info("\n>>> [Step 3/4] 买入持有 baseline")
+    logger.info("\n>>> [Step 3/8] 买入持有 baseline")
     hist_bh = run_buy_and_hold(env)
     m_bh = compute_metrics(hist_bh, "BuyAndHold")
 
     # 4. 汇总 + 保存
-    logger.info("\n>>> [Step 4/4] 汇总指标 + 绘图")
+    logger.info("\n>>> [Step 4/8] 汇总指标 + 绘图")
     metrics = pd.DataFrame([m_random, m_bh])
 
     OUTPUT_TABLES.mkdir(parents=True, exist_ok=True)
@@ -124,20 +126,20 @@ def run_stage6():
                     row["number_of_trades"])
 
     # =========================================================
-    # 5-7. Q-learning 训练 + 评估
+    # 5-6. Q-learning 训练 + 评估（原有全样本方式）
     # =========================================================
-    logger.info("\n>>> [Step 5/7] 创建 Q-learning 环境")
+    logger.info("\n>>> [Step 5/8] 创建 Q-learning 环境")
     env_ql = StockTradingEnv(df, transaction_cost=0.001)
     logger.info("状态空间: 27 (3x3x3), 动作空间: 2")
 
-    logger.info("\n>>> [Step 6/7] 训练 Q-learning (50 episodes)")
+    logger.info("\n>>> [Step 6/8] 训练 Q-learning (50 episodes, 全样本)")
     Q, train_log = train_qlearning(env_ql, episodes=50)
     train_log.to_csv(OUTPUT_TABLES / "SPY_rl_qlearning_training_log.csv",
                      index=False, encoding="utf-8-sig")
     logger.info("训练日志已保存: %s",
                 OUTPUT_TABLES / "SPY_rl_qlearning_training_log.csv")
 
-    logger.info("\n>>> [Step 7/7] 评估 Q-learning + 输出")
+    logger.info("\n>>> [Step 7/8] 评估 Q-learning + 输出（全样本）")
     hist_ql = evaluate_qlearning(env_ql, Q)
     m_ql = compute_metrics(hist_ql, "QLearning")
 
@@ -178,16 +180,30 @@ def run_stage6():
     logger.info("Q-learning 权益图已保存: %s",
                 OUTPUT_FIGURES / "SPY_rl_qlearning_equity.png")
 
-    logger.info("\n--- Q-learning 指标摘要 ---")
+    logger.info("\n--- Q-learning 指标摘要（全样本） ---")
     logger.info("  [QLearning] total_ret=%.4f sharpe=%.4f max_dd=%.4f trades=%s",
                 m_ql["total_return"], m_ql["sharpe_ratio"],
                 m_ql["max_drawdown"], m_ql["number_of_trades"])
 
+    # =========================================================
+    # 8. 增强 Q-learning：训练集训练、测试集评估
+    # =========================================================
+    logger.info("\n>>> [Step 8/8] 增强 Q-learning: 训练集/测试集分离")
+    train_summary, test_summary, test_metrics = run_enhanced_qlearning(
+        df, train_ratio=0.8, episodes=50, transaction_cost=0.001
+    )
+
     logger.info("\n" + "=" * 60)
     logger.info("  阶段6 全部完成！")
     logger.info("  baseline:  outputs/tables/SPY_rl_env_baseline_*.csv")
-    logger.info("  Q-learning: outputs/tables/SPY_rl_qlearning_*.csv")
+    logger.info("  Q-learning (全样本): outputs/tables/SPY_rl_qlearning_*.csv")
     logger.info("  权益图:    outputs/figures/SPY_rl_*_equity.png")
+    logger.info("  --- 增强输出 ---")
+    logger.info("  训练/测试摘要: outputs/tables/SPY_rl_train_test_summary.csv")
+    logger.info("  测试集指标:    outputs/tables/SPY_rl_test_strategy_metrics.csv")
+    logger.info("  测试集曲线:    outputs/tables/SPY_rl_test_equity_curves.csv")
+    logger.info("  测试集权益图:  outputs/figures/SPY_rl_test_equity_curves.png")
+    logger.info("  测试集回撤图:  outputs/figures/SPY_rl_test_drawdowns.png")
     logger.info("=" * 60)
 
 

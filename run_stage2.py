@@ -4,9 +4,10 @@
 =============================================================================
 流程:
   1. 读取 data/processed/SPY_clean_2015_2025.csv
-  2. 构建基础技术特征（收益率、均线、波动率、成交量均线、价格比率）
+  2. 构建基础技术特征 + 相对化特征
   3. 保存特征数据到 data/features/SPY_features_2015_2025.csv
   4. 生成特征摘要到 outputs/tables/SPY_feature_summary.csv
+  5. 保存特征字段说明到 outputs/tables/SPY_feature_columns_enhanced.csv
 
 用法:  python run_stage2.py
 =============================================================================
@@ -20,7 +21,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils import setup_logging
-from src.features import build_features, save_features, generate_feature_summary, save_feature_summary
+from src.features import (
+    build_features, save_features, generate_feature_summary,
+    save_feature_summary, save_feature_columns_description,
+)
 from src.data_cleaner import load_clean_data
 
 logger = setup_logging("stage2")
@@ -33,18 +37,22 @@ def run_stage2():
     logger.info("=" * 60)
 
     # Step 1: 加载清洗数据
-    logger.info("\n>>> [Step 1/3] 加载清洗数据")
+    logger.info("\n>>> [Step 1/4] 加载清洗数据")
     df_clean = load_clean_data("SPY_clean_2015_2025.csv")
 
     # Step 2: 构建特征
-    logger.info("\n>>> [Step 2/3] 构建特征")
+    logger.info("\n>>> [Step 2/4] 构建特征")
     df_feat = build_features(df_clean)
     save_features(df_feat)
 
     # Step 3: 生成摘要
-    logger.info("\n>>> [Step 3/3] 生成特征摘要")
+    logger.info("\n>>> [Step 3/4] 生成特征摘要")
     summary = generate_feature_summary(df_feat)
     save_feature_summary(summary)
+
+    # Step 4: 保存特征字段说明
+    logger.info("\n>>> [Step 4/4] 保存特征字段说明")
+    save_feature_columns_description()
 
     # 打印关键指标
     logger.info("--- 特征摘要 ---")
@@ -57,6 +65,7 @@ def run_stage2():
     logger.info("  阶段2 全部完成！")
     logger.info("  特征数据:   data/features/SPY_features_2015_2025.csv")
     logger.info("  特征摘要:   outputs/tables/SPY_feature_summary.csv")
+    logger.info("  特征说明:   outputs/tables/SPY_feature_columns_enhanced.csv")
     logger.info("=" * 60)
 
 
