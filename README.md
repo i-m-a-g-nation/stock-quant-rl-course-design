@@ -206,3 +206,30 @@ python scripts/collect_experiment_summary.py  # 生成实验总摘要
 | `outputs/EXPERIMENT_SUMMARY.md` | 实验总摘要 |
 
 > 免责声明：本项目仍为课程实验，不构成投资建议。
+
+---
+
+## V2 Research Platform
+
+本项目包含两个版本：
+
+1. **main/V1**：课程设计版，包含 Stage 1–6
+2. **v2-research-platform**：研究扩展版，包含 Stage 7–10
+
+### V2 主要内容
+
+- **Stage 7**：Walk-forward 验证
+- **Stage 8**：收益率回归预测
+- **Stage 9**：三类信号分类（买入/持有/卖出）
+- **Stage 10**：多周期信号预测
+
+### 重要说明
+
+- Stage 10 已修正 long-horizon overlapping return 的解释
+- 20d DummyMostFrequent 2110.78% 是重叠收益复利放大，不是真实可执行收益
+- non-overlap 口径约为 9.29%
+- 本项目不构成投资建议
+
+### 查看 V2 版本
+
+切换到 `v2-research-platform` 分支查看 V2 研究平台代码和结果。

@@ -1,0 +1,5 @@
+stage,task,n_folds,n_models,main_metric,best_observation,baseline_result,main_limitation,conclusion
+Stage 7,二分类方向,17,4,ROC-AUC / balanced_accuracy,部分模型略高于随机水平,LogisticRegression ROC-AUC=0.4872,模型接近多数类偏置（LR预测上涨97.57%）,方向信号不稳定
+Stage 8,收益率回归,17,5,R² / MAE / 方向命中率,RMSE数值不大（约1.1%）,DummyRegressor MAE=0.007622,R²为负（-0.01到-1.09）相关性接近0,next_return幅度难稳定预测
+Stage 9,三分类信号,17×3,5,balanced_accuracy / macro_f1,no-trade zone降低交易次数,Dummy balanced_accuracy=0.3333,macro_f1低（0.18-0.33）接近随机基线,三分类未优于二分类
+Stage 10,多周期预测,17×4×3,5,balanced_accuracy / non_overlap_total_return,10d/20d balanced_accuracy略高于1d,Dummy balanced_accuracy=0.5000,长horizon回测存在重叠收益放大问题,有探索价值但信号仍不稳定
