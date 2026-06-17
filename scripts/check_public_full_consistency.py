@@ -65,12 +65,12 @@ def check_public_required_files():
             missing_files.append(file_path)
     
     if missing_files:
-        print("❌ 缺少 public 必需文件:")
+        print("[FAIL] 缺少 public 必需文件:")
         for file_path in missing_files:
             print(f"   - {file_path}")
         return False
     else:
-        print("✅ 所有 public 必需文件都存在")
+        print("[OK] 所有 public 必需文件都存在")
         return True
 
 def check_local_full_optional_files():
@@ -81,12 +81,12 @@ def check_local_full_optional_files():
             missing_files.append(file_path)
     
     if missing_files:
-        print("⚠️  以下 local full 可选文件缺失（不影响 public 版）:")
+        print("[WARN] 以下 local full 可选文件缺失（不影响 public 版）:")
         for file_path in missing_files:
             print(f"   - {file_path}")
         return False
     else:
-        print("✅ 所有 local full 可选文件都存在")
+        print("[OK] 所有 local full 可选文件都存在")
         return True
 
 def main():
@@ -105,10 +105,10 @@ def main():
     print("=" * 60)
     
     if not public_ok:
-        print("❌ 检查失败：缺少 public 必需文件")
+        print("[FAIL] 检查失败：缺少 public 必需文件")
         sys.exit(1)
     else:
-        print("✅ 检查通过：public 版文件完整")
+        print("[OK] 检查通过：public 版文件完整")
         sys.exit(0)
 
 if __name__ == "__main__":
