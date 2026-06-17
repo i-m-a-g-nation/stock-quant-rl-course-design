@@ -1,3 +1,16 @@
+# 公开发布版说明
+
+本仓库为**公开发布版（public version）**，仅包含代码和轻量文档。完整的数据、模型、输出文件等请参阅本地完整开发版（local full version）。
+
+- GitHub 仓库：public version
+- 本地完整开发版：包含所有 outputs、data、models 等
+- 有意设计：public 版不包含所有 outputs，不是实验缺失
+- 完整结果可通过运行 `run_stage1.py` 到 `run_stage6.py` 重新生成
+- 最终报告 Markdown 位于 `docs/大数据课设报告_最终版.md`
+- docx 报告仅保留在本地 full 版
+
+---
+
 # 基于机器学习与强化学习的股票交易策略建模及量化风险评估研究
 
 > 课程设计项目。所有模型输出仅供课程研究参考，不构成实际投资建议。
